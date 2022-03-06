@@ -63,7 +63,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\CameraController.cs" />
+    <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Users/tomasz.naglik/Documents/GitHub/Gamma/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
