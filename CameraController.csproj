@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
+    <Compile Include="Assets\Scripts\Camera\ICameraController.cs" />
     <None Include="Assets\Scripts\Camera\CameraController.asmdef" />
     <Reference Include="UnityEditor.UI">
       <HintPath>C:/Users/tomasz.naglik/Documents/GitHub/Gamma/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>

@@ -150,8 +150,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec02debef83412744ac8ad6fcdd4474c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ScreenBorder: 0
-  MoveSpeed: 0
+  ScreenBorder: 0.1
+  MoveSpeed: 1
 --- !u!4 &526872543
 Transform:
   m_ObjectHideFlags: 0

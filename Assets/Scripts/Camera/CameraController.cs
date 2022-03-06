@@ -2,53 +2,52 @@
 using System;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class CameraController : MonoBehaviour, ICameraController
 {
     [SerializeField]
-    private float ScreenBorder;
+    private float ScreenBorder = 0.05f;
     [SerializeField]
-    private int MoveSpeed;
+    private int MoveSpeed = 1;
     private Vector2 mouse;
     private Vector2 movementDirection;
     private Vector2 screenDimensions;
     private Vector3 movementTranslation;
     private Vector3 newPosition;
-    
-    private Vector2 MapLimit;
+
+    private Vector2 mapLimit;
 
     private float zoom;
-    private Vector2 zoomClamp;
+    private Vector2 zoomLimit;
 
-    private Camera camera;
+    private new Camera camera;
     private Transform cameraTransform;
+
+    public Vector2 MapLimit { get => mapLimit; set => mapLimit = value; }
+    public Camera Camera { get => camera; set => camera = Camera.main; }
+    public Vector2 ZoomLimit { get => zoomLimit; set => zoomLimit = value; }
 
     private void Awake()
     {
+        
         mouse = Input.mousePosition;
         movementDirection = new Vector2();
         screenDimensions = new Vector2();
         movementTranslation = new Vector3();
         newPosition = new Vector3();
         MapLimit = new Vector2(50, 25);
-        zoomClamp = new Vector2(0.5f, 10);
-        camera = Camera.main;
+        ZoomLimit = new Vector2(0.5f, 10);
+        Camera = Camera.main;
 
     }
 
-    void Start()
-    {
-        
-    }
 
-    
     void Update()
     {
         GatherInput();
-        Move();
-        Zoom();
+        Move(movementDirection, MoveSpeed);
+        Zoom(zoom);
 
     }
-
 
     private void GatherInput()
     {
@@ -86,12 +85,12 @@ public class CameraController : MonoBehaviour
 
         //print("Movement direction: " + movementDirection + "  Zoom: " + zoom);
     }
-    private void Move()
+    public void Move(Vector2 moveDir, float _moveSpeed)
     {
         newPosition = transform.position;
-        movementTranslation.x = movementDirection.x * MoveSpeed;
-        movementTranslation.z = movementDirection.y * MoveSpeed;
-        
+        movementTranslation.x = moveDir.x * _moveSpeed;
+        movementTranslation.z = moveDir.y * _moveSpeed;
+
         newPosition += movementTranslation;
         newPosition.x = Mathf.Clamp(newPosition.x, -MapLimit.x, MapLimit.x);
         newPosition.z = Mathf.Clamp(newPosition.z, -MapLimit.y, MapLimit.y);
@@ -99,22 +98,17 @@ public class CameraController : MonoBehaviour
         transform.position = newPosition;
 
         //print("Position: " + transform.position);
-       
-    }
 
-    private void Zoom()
+    }
+    public void Zoom(float _zoom)
     {
-        cameraTransform = camera.transform;
-        cameraTransform.Translate(0, 0, zoom);
-        while(cameraTransform.position.y < zoomClamp.x)
+        cameraTransform = Camera.transform;
+        cameraTransform.Translate(0, 0, _zoom);
+        while (cameraTransform.position.y < ZoomLimit.x)
         {
-            cameraTransform.Translate(0, 0, -zoom/10);
+            cameraTransform.Translate(0, 0, -_zoom / 10);
         }
-        /*while (cameraTransform.position.y > zoomClamp.y)
-        {
-            cameraTransform.Translate(0, 0, zoom / 10);
-        }*/
-        camera.transform.position = cameraTransform.position;
-        
+        Camera.transform.position = cameraTransform.position;
+
     }
 }
