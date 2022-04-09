@@ -1,0 +1,131 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+
+#define PI  3.1415926535897932384626433832795028841971693993751058209749
+
+float distanceToLine(float2 a, float2 b, float2 p, float radius, float smooth) {
+    float2 v = a, w = b;
+
+    float l2 = pow(distance(w, v), 2.);
+    if (l2 == 0.0) return distance(p, v);
+
+    float t = clamp(dot(p - v, w - v) / l2, 0., 1.);
+    float2 j = v + t * (w - v);
+
+    float d = distance(p, j);
+    d = smoothstep(radius, radius + smooth, d);
+    return d;
+}
+
+float distanceToCircle(float2 c, float2 p, float r, float smooth) {
+    float dist = distance(p, c);
+    dist = smoothstep(r, r + smooth, dist);
+
+    return dist;
+}
+float map(float value, float istart, float istop, float ostart, float ostop) {
+    return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
+}
+
+float2 ToPlane(float3 p) {
+    float radius = 1.0;
+    float2 result;
+
+
+
+    float latitude = acos(p.z / radius);
+    float longitude = atan2(-p.y, p.x);
+
+
+    result.x = map(longitude, -PI, PI, 0.0, 1.0);
+    result.y = map(latitude, -PI / 2.0, PI / 2.0, 0.0, 1.0);
+    return result;
+}
+
+float3 ToSphere(float2 p) {
+    float radius = 1.0;
+    float longitude = map(p.x, 0.0, 1.0, -PI, PI);
+    float latitude = map(p.y, 0.0, 1.0, -PI / 2.0, PI / 2.0);
+
+    float3 result;
+    result.x = sin(latitude) * cos(longitude);
+    result.y = sin(latitude) * sin(longitude);
+    result.z = cos(latitude);
+    return result;
+}
+
+float BorderMask(float2 uv) {
+    float2 c1 = float2(0.0, 0.0);
+    float2 c2 = float2(2.0, 0.0);
+    float2 c3 = float2(2.0, 1.0);
+    float2 c4 = float2(0.0, 1.0);
+    float width1 = 0.010;
+
+    float dLine1 = distanceToLine(c1, c2, uv, width1, width1);
+    float dLine2 = distanceToLine(c2, c3, uv, width1, width1);
+    float dLine3 = distanceToLine(c3, c4, uv, width1, width1);
+    float dLine4 = distanceToLine(c4, c1, uv, width1, width1);
+
+    float borderMask;
+    borderMask = min(dLine1, dLine2);
+    borderMask = min(borderMask, dLine3);
+    borderMask = min(borderMask, dLine4);
+
+    return borderMask;
+}
+
+
+
+//#include "noiseSimplex.cginc"
+RWTexture2D<float> output_texture;
+#pragma kernel HeightMapCalculation
+#include "noiseSimplex.cginc"
+float frequency;
+float lacunarity;
+float persistance;
+
+float threshold;
+float2 MapResolution;
+float xOffset;
+float yOffset;
+float waterLevel;
+[numthreads(8, 8, 1)]
+
+
+
+void HeightMapCalculation(uint3 id : SV_DispatchThreadID)
+{
+    float2 uv = (id.xy) / MapResolution.y;
+
+    float3 uv3D = ToSphere(uv);
+
+
+    //map detail
+
+
+    float noiseHeight = 0;
+    float amplitude = 1;
+    float maxAmplitude = 0;
+    float2 offset = float2(xOffset, yOffset);
+
+
+    for (int i = 0; i < 10; i++) {
+        float2 nSample = (uv + offset) / frequency;
+        float noiseValue = snoise(nSample) + threshold;
+
+        noiseHeight += noiseValue * amplitude;
+        maxAmplitude += amplitude;
+        amplitude *= persistance;
+        frequency *= lacunarity;
+    }
+
+    noiseHeight = noiseHeight / maxAmplitude;
+
+
+    if (noiseHeight < waterLevel) {
+        noiseHeight = 0.0;
+    }
+    output_texture[id.xy] = noiseHeight * BorderMask(uv);
+}
+
+
+
