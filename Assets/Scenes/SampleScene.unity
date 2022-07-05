@@ -316,14 +316,16 @@ MonoBehaviour:
   renderTexture: {fileID: 0}
   targetTexture2D: {fileID: 0}
   CS_Heightmap: {fileID: 7200000, guid: 26f10ec21af339d4496e0727b9540cc3, type: 3}
-  MapResolution: {x: 2000, y: 1000}
-  persistance: 0.785
-  frequency: 7.13
-  lacunarity: 0.289
-  threshold: 2.14
-  waterLevel: 0.088
-  xOffset: 0
-  yOffset: 0
+  NumRegions: 20
+  NumContinents: 4
+  MapResolution: {x: 1000, y: 500}
+  persistance: 0.501
+  frequency: 14
+  lacunarity: 0.381
+  threshold: 0.26
+  waterLevel: 0.382
+  xOffset: 19.17
+  yOffset: -2.39
 --- !u!1 &1300444380
 GameObject:
   m_ObjectHideFlags: 0
@@ -449,8 +451,9 @@ MonoBehaviour:
   MovementTime: 20
   RotationAmount: 1
   ZoomAmount: {x: 0, y: -1, z: 1}
-  MaxZoom: 20
-  MinZoom: -10
+  MaxZoom: 1
+  MinZoom: -100
+  BoostSpeed: 5
 --- !u!4 &1889515982
 Transform:
   m_ObjectHideFlags: 0

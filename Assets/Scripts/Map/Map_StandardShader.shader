@@ -56,18 +56,36 @@
             return gv.x + gv.y;
         }
 
+        bool IsSameCell(float2 uv, float2 mp, float2 dimensions) {
+            uv *= dimensions;
+            mp *= dimensions;
+
+            return floor(uv.x) == floor(mp.x) && floor(uv.y) == floor(mp.y);
+        }
+
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
+            float3 finalColor = 0;
             float2 uv = IN.uv_MainTex.xy;
             float2 MapDimensions = float2(1000, 500);
             float2 gv = uv * MapDimensions;
 
-            float DistanceToMouse = distanceToMouse(uv, _MousePosition, 0.03);
+            float DistanceToMouse = distanceToMouse(uv, _MousePosition, 0.01);
             float Grid = grid(gv);
-            
-            float3 finalColor=0;
             finalColor = min(Grid,DistanceToMouse);
+            float3 highlight = float3(0, 1, 0);
+            if (IsSameCell(uv, _MousePosition, MapDimensions)) {
+                finalColor += highlight;
+            }
             
+            
+           
+            
+
+            float3 textureColor = tex2D(_MainTex, uv);
+            finalColor += textureColor;
+
+
             fixed4 c = float4(finalColor,1);
             o.Albedo = c.rgb;
 

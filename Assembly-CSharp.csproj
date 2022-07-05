@@ -66,6 +66,7 @@
     <Compile Include="Assets\Scripts\Map\Map_Manager.cs" />
     <Compile Include="Assets\Scripts\Map\Noise.cs" />
     <None Include="Assets\Scripts\Map\noiseSimplex.cginc" />
+    <None Include="Assets\Scripts\Map\Map_HexShader.shader" />
     <None Include="Assets\Scripts\Map\Map_StandardShader.shader" />
     <None Include="Assets\Scripts\Map\Map_Heightmap_Generator.compute" />
     <Reference Include="Unity.Timeline.Editor">

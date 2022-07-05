@@ -1,7 +1,7 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 
 #define PI  3.1415926535897932384626433832795028841971693993751058209749
-
+#include "noiseSimplex.cginc"
 float distanceToLine(float2 a, float2 b, float2 p, float radius, float smooth) {
     float2 v = a, w = b;
 
@@ -26,6 +26,59 @@ float map(float value, float istart, float istop, float ostart, float ostop) {
     return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 }
 
+bool LinesIntersect(float2 A, float2 B, float2 C, float2 D) {
+    
+
+    float rN = ((A.x - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y));
+    float rD = ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
+
+    float sN = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y));
+    float sD = ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
+
+    if (rD == 0 || sD == 0) return false;
+
+    float r = rN / rD;
+
+    float s = sN / sD;
+
+    if (r >= 0 && r <= 1 && s >= 0 && s <= 1) return true;
+
+    return false;
+
+   /*  (Ay - Cy)(Dx - Cx) - (Ax - Cx)(Dy - Cy)
+        r = ---------------------------- - (eqn 1)
+        (Bx - Ax)(Dy - Cy) - (By - Ay)(Dx - Cx)
+
+        (Ay - Cy)(Bx - Ax) - (Ax - Cx)(By - Ay)
+        s = ---------------------------- - (eqn 2)
+        (Bx - Ax)(Dy - Cy) - (By - Ay)(Dx - Cx)
+
+    */
+
+
+}
+
+bool PointInPolygon(float2 p, StructuredBuffer<float2> polygon) {
+
+    uint size;
+    uint stride;
+    polygon.GetDimensions(size, stride);
+    uint count = 0;
+
+    float2 d = float2(0, 0); 
+    float2 a = polygon[0];
+    float2 b = polygon[size-1];
+
+    if (LinesIntersect(p, d, a, b)) count++;
+    for (int i = 0; i < size-1; i++) {
+        a = polygon[i];
+        b = polygon[i + 1];
+
+        if (LinesIntersect(p, d, a, b)) count++;
+    }
+
+    return count % 2 == 1;
+}
 float2 ToPlane(float3 p) {
     float radius = 1.0;
     float2 result;
@@ -72,33 +125,7 @@ float BorderMask(float2 uv) {
 
     return borderMask;
 }
-
-
-
-//#include "noiseSimplex.cginc"
-RWTexture2D<float> output_texture;
-#pragma kernel HeightMapCalculation
-#include "noiseSimplex.cginc"
-float frequency;
-float lacunarity;
-float persistance;
-
-float threshold;
-float2 MapResolution;
-float xOffset;
-float yOffset;
-float waterLevel;
-[numthreads(8, 8, 1)]
-
-
-
-void HeightMapCalculation(uint3 id : SV_DispatchThreadID)
-{
-    float2 uv = (id.xy) / MapResolution.y;
-
-    float3 uv3D = ToSphere(uv);
-
-
+float NoiseHeight(float2 uv, float xOffset, float yOffset, float frequency, float persistance, float lacunarity, float threshold, float waterLevel) {
     //map detail
 
 
@@ -106,7 +133,6 @@ void HeightMapCalculation(uint3 id : SV_DispatchThreadID)
     float amplitude = 1;
     float maxAmplitude = 0;
     float2 offset = float2(xOffset, yOffset);
-
 
     for (int i = 0; i < 10; i++) {
         float2 nSample = (uv + offset) / frequency;
@@ -120,11 +146,82 @@ void HeightMapCalculation(uint3 id : SV_DispatchThreadID)
 
     noiseHeight = noiseHeight / maxAmplitude;
 
-
     if (noiseHeight < waterLevel) {
         noiseHeight = 0.0;
     }
-    output_texture[id.xy] = noiseHeight * BorderMask(uv);
+
+    return noiseHeight;
+}
+
+
+float3 ProceduralLandmass(float2 uv, RWStructuredBuffer<float3> Seeds, StructuredBuffer<float3> BigSeeds) {
+    
+    int closestSeed = 0;
+    float minDist = 10;
+
+    int closestBigSeed = 0;
+    float minDistBigSeed = 10;
+
+    uint size;
+    uint stride;
+    BigSeeds.GetDimensions(size, stride);
+    for (int i = 0; i < size; i++) {
+        float dist = distance(uv, BigSeeds[i])+ snoise(uv/1000.)*1000;
+        if (dist < minDist) {
+            minDist = dist;
+            closestSeed = i;
+        }
+
+        
+    }
+
+    /*BigSeeds.GetDimensions(size, stride);
+    for (int i = 0; i < size; i++) {
+        float dist = distance(BigSeeds[i], Seeds[closestSeed]) + snoise(uv / 1000.) * 1000;
+        if (dist < minDist) {
+            minDistBigSeed = dist;
+            closestBigSeed = i;
+        }
+
+
+    }*/
+    float3 result = BigSeeds[closestSeed] / 2;
+    //result.z = BigSeeds[closestBigSeed].z;
+
+
+   
+    
+
+    return result;
+}
+
+//#include "noiseSimplex.cginc"
+RWTexture2D<float> output_texture;
+#pragma kernel HeightMapCalculation
+
+
+    RWStructuredBuffer<float3> Seeds;
+    StructuredBuffer<float3> BigSeeds;
+
+    float frequency;
+    float lacunarity;
+    float persistance;
+
+    float threshold;
+    float2 MapResolution;
+    float xOffset;
+    float yOffset;
+    float waterLevel;
+
+[numthreads(8, 8, 1)]
+void HeightMapCalculation(uint3 id : SV_DispatchThreadID)
+{
+    float2 uv = (id.xy) / MapResolution.y;
+    
+   
+    float3 proceduralLandmass = ProceduralLandmass(uv, Seeds, BigSeeds);
+    
+    output_texture[id.xy] = float4(proceduralLandmass.z, proceduralLandmass.z, proceduralLandmass.z,1);
 }
 
 

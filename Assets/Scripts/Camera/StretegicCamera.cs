@@ -10,6 +10,7 @@ public class StretegicCamera : MonoBehaviour
     [SerializeField] private Vector3 ZoomAmount;
     [SerializeField] private float MaxZoom;
     [SerializeField] private float MinZoom;
+    [SerializeField] private float BoostSpeed;
     
     private Vector3 NewZoom;    
     private Vector3 NewPosition;
@@ -26,6 +27,7 @@ public class StretegicCamera : MonoBehaviour
     private Vector3 RotateStartPosition;
     private Vector3 RotateCurrentPosition;
 
+   
 
     void Awake()
     {
@@ -82,22 +84,29 @@ public class StretegicCamera : MonoBehaviour
 
     private void GetKeyboardInput()
     {
-        if(Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+        float FinalMovementSpeed = MovementSpeed;
+        if (Input.GetKey(KeyCode.RightShift))
         {
-            NewPosition += (transform.forward * MovementSpeed);
+            FinalMovementSpeed = MovementSpeed*BoostSpeed;
+        } 
+
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+        {
+            NewPosition += (transform.forward * FinalMovementSpeed);
         }
         if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
         {
-            NewPosition += (transform.forward * -MovementSpeed);
+            NewPosition += (transform.forward * -FinalMovementSpeed);
         }
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
-            NewPosition += (transform.right * -MovementSpeed);
+            NewPosition += (transform.right * -FinalMovementSpeed);
         }
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
         {
-            NewPosition += (transform.right * MovementSpeed);
+            NewPosition += (transform.right * FinalMovementSpeed);
         }
+
 
         
 
@@ -120,6 +129,8 @@ public class StretegicCamera : MonoBehaviour
         {
             NewZoom -= ZoomAmount;
         }
+
+        
        
 
 

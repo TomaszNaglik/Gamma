@@ -11,7 +11,8 @@ public class Map_Manager : MonoBehaviour
     private Renderer renderer;
     public ComputeShader CS_Heightmap;
 
-    
+    public int NumRegions;
+    public int NumContinents;
     public Vector2 MapResolution;
 
     [Range(0, 1)]
@@ -105,6 +106,25 @@ public class Map_Manager : MonoBehaviour
         CS_Heightmap_Generator.SetFloat("waterLevel", waterLevel);
         CS_Heightmap_Generator.SetVector("MapResolution", MapResolution);
 
+        Vector3[] SeedsArray = new Vector3[NumRegions];
+        for(int i = 0; i < SeedsArray.Length; i++)
+        {
+            SeedsArray[i] = new Vector3(UnityEngine.Random.value*2, UnityEngine.Random.value,0);
+        }
+
+        ComputeBuffer Seeds = new ComputeBuffer(NumRegions, sizeof(float)*3);
+        Seeds.SetData(SeedsArray);
+        CS_Heightmap_Generator.SetBuffer(0, "Seeds", Seeds);
+
+        Vector3[] BigSeedsArray = new Vector3[NumContinents];
+
+        for (int i = 0; i < BigSeedsArray.Length; i++)
+        {
+            BigSeedsArray[i] = new Vector3(UnityEngine.Random.value * 2, UnityEngine.Random.value, UnityEngine.Random.value > 0.95? 1:0);
+        }
+        ComputeBuffer BigSeeds = new ComputeBuffer(NumRegions, sizeof(float) * 3);
+        BigSeeds.SetData(BigSeedsArray);
+        CS_Heightmap_Generator.SetBuffer(0, "BigSeeds", BigSeeds);
 
         CS_Heightmap_Generator.Dispatch(0, renderTexture.width / 8, renderTexture.height / 8, 1);
 
